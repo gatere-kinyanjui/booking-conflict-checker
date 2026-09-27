@@ -3,6 +3,7 @@ import { db } from './db'
 import { propertyTable } from './db/schema'
 import * as z from 'zod'
 import { sValidator } from '@hono/standard-validator'
+import { eq } from 'drizzle-orm'
 
 const app = new Hono()
 const zodSchema = z.object({
@@ -24,6 +25,21 @@ app.post('/property', sValidator('json', zodSchema), async (c) => {
 
   return c.json(property, 201)
 })
+
+app.get('/property', async (c) => {
+  const result = await db.select().from(propertyTable)
+  return c.json(result)
+})
+
+app.get('/property/:id', async (c) => {
+  const id = Number(c.req.param('id'))
+  const [result] = await db.select().from(propertyTable).where(eq(propertyTable.id, id))
+
+  if (!result) return c.json({ error: 'Property not found' }, 404)
+  return c.json(result)
+})
+
+
 
 app.onError((err, c) => {
   console.error('Index.ts error: ', err)
